@@ -93,10 +93,12 @@ is a bigger lift than the actual work to log the temperatures.
 
 This is part utilitarian tool, and part "art project": in that way, it is not unlike gardening.  Potential future directions:
 
-- [ ] Automatically build a binary for RPi using [GitHub Actions](https://github.com/features/actions)
+- [x] Automatically build a binary for RPi using [GitHub Actions](https://github.com/features/actions)
 - [ ] Refactor the REST call to use the official [Go client](https://github.com/adafruit/io-client-go#usage).
 - [ ] Integration tests.
 - [ ] On start-up, create data feeds as needed for the attached sensors.
+- [x] Provide systemd unit files
 - [ ] Run the build (and dev tools like linting) with [Bazel](https://bazel.build/)
+- [ ] Provide Debian package, from Bazel
 - [ ] Notify me (e.g. email, or [Pushover](https://pushover.net/)) when the temp exceeds a range
 - [ ] Maybe port the code to [Elixir](https://elixir-lang.org/)
