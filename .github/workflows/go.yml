@@ -34,5 +34,5 @@ jobs:
 
     - uses: actions/upload-artifact@v2
       with:
-        name: my-artifact
+        name: rpi_temp
         path: rpi_temp
