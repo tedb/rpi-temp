@@ -1,0 +1,9 @@
+[Unit]
+Description=RPi temperature probe reporting
+After=network.target auditd.service
+
+[Service]
+EnvironmentFile=/home/pi/rpi_temp.env
+ExecStart=/home/pi/rpi_temp
+Type=oneshot
+User=pi
