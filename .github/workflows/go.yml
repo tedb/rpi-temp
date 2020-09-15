@@ -30,7 +30,7 @@ jobs:
       run: go test -v .
 
     - name: Build for RPi
-      run: GOARCH="arm" GOARM="6" GOOS="linux" go build -v rpi_temp
+      run: GOARCH="arm" GOARM="6" GOOS="linux" go build -v rpi_temp.go
 
     - uses: actions/upload-artifact@v2
       with:
