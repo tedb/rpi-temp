@@ -1,0 +1,13 @@
+[Unit]
+Description=RPi temperature probe reporting w Gobot and MQTT
+After=network.target auditd.service
+
+[Service]
+EnvironmentFile=/home/pi/rpi_temp.env
+ExecStartPre=+/bin/bash -c "/bin/chmod g+w /sys/bus/w1/devices/w1_bus_master1/therm_bulk_read; chgrp pi /sys/bus/w1/devices/w1_bus_master1/therm_bulk_read"
+ExecStart=/home/pi/gobot_temp
+Type=simple
+User=pi
+
+[Install]
+WantedBy=multi-user.target
