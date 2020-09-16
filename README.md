@@ -103,3 +103,4 @@ This is part utilitarian tool, and part "art project": in that way, it is not un
 - [ ] Notify me (e.g. email, or [Pushover](https://pushover.net/)) when the temp exceeds a range
 - [ ] Maybe port the code to [Elixir](https://elixir-lang.org/)
 - [ ] Consider ["bulk read"](https://www.kernel.org/doc/html/latest/w1/slaves/w1_therm.html) interface (faster?)
+- [ ] Capture RPi camera and publish to Adafruit for its dashboard; see [docs](https://io.adafruit.com/api/docs/cookbook.html#publishing-image-data)
