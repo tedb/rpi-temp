@@ -2,7 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"log"
+	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
@@ -24,6 +28,7 @@ type FeedUpdate struct {
 
 const mqttURL = "ssl://io.adafruit.com:8883"
 const mqttClientID = "gobot"
+const oneWireBasePath = "/sys/bus/w1/devices/w1_bus_master1/"
 
 func main() {
 	var config Config
@@ -45,21 +50,18 @@ func main() {
 		})
 
 		gobot.Every(1*time.Second, func() {
-			// TODO: use real data
-			data := FeedUpdate{
-				Feeds: map[string]float64{
-					"temp-011850aecaff": 99.1,
-					"temp-0218508170ff": 98.2,
-				},
+			data, err := ReadAllTemps(oneWireBasePath)
+			if err != nil {
+				log.Fatal("Error reading temperatures", err)
 			}
-			mqttJSON, err := json.Marshal(data)
+
+			mqttJSON, err := json.Marshal(FeedUpdate{Feeds: data})
 			if err != nil {
 				log.Fatal("JSON did not marshal", err)
 			}
 			log.Printf("%s", mqttJSON)
 
 			topic := config.Username + "/groups/" + config.Group
-			log.Println(topic)
 			mqttAdaptor.Publish(topic, mqttJSON)
 		})
 	}
@@ -70,4 +72,70 @@ func main() {
 	)
 
 	robot.Start()
+}
+
+// ReadAllTemps uses bulk read to get all temperature probes
+func ReadAllTemps(path string) (map[string]float64, error) {
+	temps := make(map[string]float64)
+
+	thermBulkRead := filepath.Join(path, "therm_bulk_read")
+	err := ioutil.WriteFile(thermBulkRead, []byte("trigger\n"), 0)
+	if err != nil {
+		return nil, err
+	}
+
+	// Wait for bulk reads to complete
+	for {
+		data, err := ioutil.ReadFile(thermBulkRead)
+		if err != nil {
+			return nil, err
+		}
+		if strings.TrimSpace(string(data)) == "1" {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	probeDirs, err := filepath.Glob(path + "28-*")
+	if err != nil {
+		return nil, err
+	}
+
+	for _, dirName := range probeDirs {
+		dirName := dirName
+
+		name, degC, degF, err := readTemp(dirName)
+		if err != nil {
+			return nil, err
+		}
+
+		temps["temp-"+name+"-c"] = degC
+		temps["temp-"+name+"-f"] = degF
+	}
+
+	return temps, nil
+}
+
+func readTemp(dirName string) (name string, degC, degF float64, err error) {
+	rawName, err := ioutil.ReadFile(filepath.Join(dirName, "name"))
+	if err != nil {
+		return
+	}
+
+	name = strings.TrimPrefix(strings.TrimSpace(string(rawName)), "28-")
+
+	rawMilliDegC, err := ioutil.ReadFile(filepath.Join(dirName, "temperature"))
+	if err != nil {
+		return
+	}
+
+	milliDegC, err := strconv.ParseFloat(strings.TrimSpace(string(rawMilliDegC)), 32)
+	if err != nil {
+		return
+	}
+
+	degC = milliDegC / 1000.0 //nolint:gomnd
+	degF = degC*1.8 + 32      //nolint:gomnd
+
+	return
 }
