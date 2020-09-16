@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"log"
 	"path/filepath"
@@ -78,22 +79,9 @@ func main() {
 func ReadAllTemps(path string) (map[string]float64, error) {
 	temps := make(map[string]float64)
 
-	thermBulkRead := filepath.Join(path, "therm_bulk_read")
-	err := ioutil.WriteFile(thermBulkRead, []byte("trigger\n"), 0)
+	err := triggerBulkRead(path)
 	if err != nil {
 		return nil, err
-	}
-
-	// Wait for bulk reads to complete
-	for {
-		data, err := ioutil.ReadFile(thermBulkRead)
-		if err != nil {
-			return nil, err
-		}
-		if strings.TrimSpace(string(data)) == "1" {
-			break
-		}
-		time.Sleep(10 * time.Millisecond)
 	}
 
 	probeDirs, err := filepath.Glob(path + "28-*")
@@ -114,6 +102,49 @@ func ReadAllTemps(path string) (map[string]float64, error) {
 	}
 
 	return temps, nil
+}
+
+// triggerBulkRead accelerates reading the probes
+// https://www.kernel.org/doc/html/latest/w1/slaves/w1_therm.html
+func triggerBulkRead(path string) error {
+	thermBulkRead := filepath.Join(path, "therm_bulk_read")
+	err := ioutil.WriteFile(thermBulkRead, []byte("trigger\n"), 0)
+	if err != nil {
+		return err
+	}
+
+	interval := 100 * time.Millisecond
+	counter := 30 * time.Second / interval
+
+	// Wait for bulk reads to complete
+Loop:
+	for {
+		data, err := ioutil.ReadFile(thermBulkRead)
+		if err != nil {
+			return err
+		}
+
+		// From docs: Reading therm_bulk_read will
+		// return 0 if no bulk conversion pending,
+		// -1 if at least one sensor still in conversion,
+		// 1 if conversion is complete but at least one sensor
+		// value has not been read yet.
+		switch strings.TrimSpace(string(data)) {
+		case "0":
+			return errors.New("no bulk read pending, but it was triggered")
+		case "-1":
+			if counter == 0 {
+				return errors.New("timed out waiting for bulk read")
+			}
+			log.Print("Waiting for temperature probes...")
+			time.Sleep(interval)
+			counter--
+		case "1":
+			break Loop
+		}
+	}
+
+	return nil
 }
 
 func readTemp(dirName string) (name string, degC, degF float64, err error) {
