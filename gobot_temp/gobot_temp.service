@@ -8,6 +8,8 @@ ExecStartPre=+/bin/bash -c "/bin/chmod g+w /sys/bus/w1/devices/w1_bus_master1/th
 ExecStart=/home/pi/gobot_temp
 Type=simple
 User=pi
+Restart=on-failure
+RestartSec=5s
 
 [Install]
 WantedBy=multi-user.target
