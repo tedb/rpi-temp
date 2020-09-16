@@ -50,7 +50,7 @@ func main() {
 			log.Printf("Adafruit IO throttled: %s\n", msg.Payload())
 		})
 
-		gobot.Every(1*time.Second, func() {
+		gobot.Every(60*time.Second, func() {
 			data, err := ReadAllTemps(oneWireBasePath)
 			if err != nil {
 				log.Fatal("Error reading temperatures", err)
