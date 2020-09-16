@@ -53,12 +53,12 @@ func main() {
 		gobot.Every(60*time.Second, func() {
 			data, err := ReadAllTemps(oneWireBasePath)
 			if err != nil {
-				log.Fatal("Error reading temperatures", err)
+				log.Fatal("Error reading temperatures: ", err)
 			}
 
 			mqttJSON, err := json.Marshal(FeedUpdate{Feeds: data})
 			if err != nil {
-				log.Fatal("JSON did not marshal", err)
+				log.Fatal("JSON did not marshal: ", err)
 			}
 			log.Printf("%s", mqttJSON)
 
